@@ -45,7 +45,7 @@
     },
     mounted: function () {
       // 1.操作DOM, 在前后添加Slide
-      setTimeout(() => {
+      setTimeout(() => {//页面进入之后3s后轮播图才开始轮播
         this.handleDom();
 
         // 2.开启定时器

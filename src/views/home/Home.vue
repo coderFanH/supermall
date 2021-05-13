@@ -1,63 +1,25 @@
 <template>
   <div id="home">
     <nav-bar class="home-nav"><div slot="center">购物街</div></nav-bar>
-    <home-swiper :banners="banners"></home-swiper>
-    <recommend-view :recommends="recommends"></recommend-view>
-    <feature-view></feature-view>
 
-    <tab-control :titles="['流行','新款','精选']"></tab-control>
-    <ul>
-      <li>1列表1</li>
-      <li>2列表1</li>
-      <li>3列表1</li>
-      <li>4列表1</li>
-      <li>5列表1</li>
-      <li>6列表1</li>
-      <li>7列表1</li>
-      <li>8列表1</li>
-      <li>9列表1</li>
-      <li>10列表1</li>
-      <li>11列表1</li>
-      <li>12列表1</li>
-      <li>13列表1</li>
-      <li>14列表1</li>
-      <li>15列表1</li>
-      <li>16列表1</li>
-      <li>17列表1</li>
-      <li>18列表1</li>
-      <li>19列表1</li>
-      <li>20列表1</li>
-      <li>21列表1</li>
-      <li>22列表1</li>
-      <li>23列表1</li>
-      <li>24列表1</li>
-      <li>25列表1</li>
-      <li>26列表1</li>
-      <li>27列表1</li>
-      <li>28列表1</li>
-      <li>29列表1</li>
-      <li>30列表1</li>
-      <li>31列表1</li>
-      <li>32列表1</li>
-      <li>33列表1</li>
-      <li>34列表1</li>
-      <li>35列表1</li>
-      <li>36列表1</li>
-      <li>37列表1</li>
-      <li>38列表1</li>
-      <li>39列表1</li>
-      <li>40列表1</li>
-      <li>41列表1</li>
-      <li>42列表1</li>
-      <li>43列表1</li>
-      <li>44列表1</li>
-      <li>45列表1</li>
-      <li>46列表1</li>
-      <li>47列表1</li>
-      <li>48列表1</li>
-      <li>49列表1</li>
-      <li>50列表1</li>
-    </ul>
+    <scroll class="content"
+            ref="scroll"
+            :probe-type="3"
+            @scroll="backTopShow"
+            :pull-up="true"
+            @pullingUp="loadMore">
+      <home-swiper :banners="banners"></home-swiper>
+      <recommend-view :recommends="recommends"></recommend-view>
+      <feature-view></feature-view>
+
+      <tab-control :titles="['流行', '新款', '精选']"
+                   class="tab-control"
+                   @tabClick="tabClick"></tab-control>
+      <goods-list :goods="getGoodsType"></goods-list>
+    </scroll>
+
+    <back-top @click.native="backTopClick"
+              v-show="isTopShow"></back-top>
 <!--    <swiper></swiper>-->
   </div>
 </template>
@@ -67,10 +29,13 @@ import NavBar from "@/components/common/navbar/NavBar";
 import HomeSwiper from "@/views/home/childComps/HomeSwiper";
 import RecommendView from "@/views/home/childComps/RecommendView";
 import FeatureView from "@/views/home/childComps/FeatureView";
+import Scroll from "@/components/common/scroll/Scroll";
+import backTop from "@/components/content/backTop/backTop";
 
 import TabControl from "@/components/content/tabControl/TabControl";
+import GoodsList from "@/components/content/goods/GoodsList";
 
-import {getHomeMultidata} from "@/network/home";
+import {getHomeMultidata, getHomeGoods} from "@/network/home";
 // import Swiper from "@/components/common/swiper/My-Swiper";
 
 export default {
@@ -80,20 +45,81 @@ export default {
     HomeSwiper,
     RecommendView,
     FeatureView,
-    TabControl
+    TabControl,
+    GoodsList,
+    Scroll,
+    backTop
   },
   data() {
     return {
       banners: [],
-      recommends: []
+      recommends: [],
+      goods: {
+        'pop': {page: 0, list: []},
+        'new': {page: 0, list: []},
+        'sell': {page: 0, list: []}
+      },
+      currentType: 'pop',
+      isTopShow: false
+    }
+  },
+  computed: {
+    getGoodsType() {
+      return this.goods[this.currentType].list
     }
   },
   created() {
-    getHomeMultidata().then(res => {
-      // console.log(res);
-      this.banners = res.data.data.banner.list;
-      this.recommends = res.data.data.recommend.list;
-    })
+    this.getHomeMultidata();
+    this.getHomeGoods('pop');
+    this.getHomeGoods('new');
+    this.getHomeGoods('sell');
+  },
+  methods: {
+    /**
+     * 事件监听相关方法
+     */
+    tabClick(index) {
+      switch (index) {
+        case 0:
+          this.currentType = 'pop'
+          break
+        case 1:
+          this.currentType = 'new'
+          break
+        case 2:
+          this.currentType = 'sell'
+          break
+      }
+    },
+    backTopClick() {
+      this.$refs.scroll.scrollTo(0,0)
+    },
+    backTopShow(position) {
+      // console.log(position);
+      this.isTopShow = (-position.y) > 1000
+    },
+    loadMore() {
+      this.getHomeGoods(this.currentType)
+    },
+    /**
+     * 网络请求相关方法
+     */
+    getHomeMultidata() {
+      getHomeMultidata().then(res => {
+        // console.log(res);
+        this.banners = res.data.data.banner.list;
+        this.recommends = res.data.data.recommend.list;
+      })
+    },
+    getHomeGoods(type) {
+      const page = this.goods[type].page + 1;
+      getHomeGoods(type,page).then(res => {
+        // console.log(res);
+        this.goods[type].list.push(...res.data.data.list);
+        this.goods[type].page += 1;
+        this.$refs.scroll.finishPullUp()
+      })
+    }
   }
 }
 </script>
@@ -111,5 +137,20 @@ export default {
   left: 0px;
   right: 0px;
   z-index: 2;
+}
+
+.tab-control {
+  position: sticky;
+  top: 44px;
+  z-index: 2;
+}
+
+.content {
+  position: absolute;
+  top: 44px;
+  bottom: 49px;
+  left: 0px;
+  right: 0px;
+  overflow: hidden;
 }
 </style>
