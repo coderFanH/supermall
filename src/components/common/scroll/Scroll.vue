@@ -32,9 +32,11 @@ export default {
     // console.log(this.scroll);
     this.scroll = new BScroll(this.$refs.wrapper, {
       observeDOM: true,
+      observeImage: true,
       click: true,
       probeType: this.probeType,
-      pullUpLoad: this.pullUp
+      pullUpLoad: this.pullUp,
+      keepAlive: true
     })
     this.scroll.on('scroll', (position) => {
       // console.log(position);
@@ -51,6 +53,9 @@ export default {
     },
     finishPullUp() {
       this.scroll.finishPullUp()
+    },
+    getScrollY() {
+      return this.scroll ? this.scrollY : 0
     }
   }
 }

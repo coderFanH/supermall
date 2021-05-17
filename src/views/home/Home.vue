@@ -1,20 +1,24 @@
 <template>
   <div id="home">
     <nav-bar class="home-nav"><div slot="center">购物街</div></nav-bar>
-
+    <tab-control :titles="['流行', '新款', '精选']"
+                 class="tab-control"
+                 @tabClick="tabClick"
+                 ref="tabControl1"
+                 v-show="isShowTab"></tab-control>
     <scroll class="content"
             ref="scroll"
             :probe-type="3"
             @scroll="backTopShow"
             :pull-up="true"
             @pullingUp="loadMore">
-      <home-swiper :banners="banners"></home-swiper>
+      <home-swiper :banners="banners" @swiperImgLoad="swiperImgLoad"></home-swiper>
       <recommend-view :recommends="recommends"></recommend-view>
       <feature-view></feature-view>
 
       <tab-control :titles="['流行', '新款', '精选']"
-                   class="tab-control"
-                   @tabClick="tabClick"></tab-control>
+                   @tabClick="tabClick"
+                   ref="tabControl2"></tab-control>
       <goods-list :goods="getGoodsType"></goods-list>
     </scroll>
 
@@ -60,7 +64,10 @@ export default {
         'sell': {page: 0, list: []}
       },
       currentType: 'pop',
-      isTopShow: false
+      isTopShow: false,
+      tabOffsetTop: 0,
+      isShowTab: false,
+      scrollY: 0
     }
   },
   computed: {
@@ -74,6 +81,20 @@ export default {
     this.getHomeGoods('new');
     this.getHomeGoods('sell');
   },
+  activated() {
+    this.$refs.scroll.scrollTo(0,-this.scrollY,0)
+    this.$refs.scroll.scroll.refresh()
+  },
+  deactivated() {
+    this.scrollY = this.$refs.scroll.getScrollY()
+  },
+  //完成吸顶方法一
+  // mounted() {
+  //   setTimeout(() => {
+  //     this.tabOffsetTop = this.$refs.tabControl.$el.offsetTop;
+  //     // console.log(this.$refs.tabControl.$el.offsetTop);
+  //   },2000)
+  // },
   methods: {
     /**
      * 事件监听相关方法
@@ -90,16 +111,27 @@ export default {
           this.currentType = 'sell'
           break
       }
+      this.$refs.tabControl1.currentIndex = index;
+      this.$refs.tabControl2.currentIndex = index;
     },
     backTopClick() {
       this.$refs.scroll.scrollTo(0,0)
     },
     backTopShow(position) {
       // console.log(position);
+      //决定backTop是否显示
       this.isTopShow = (-position.y) > 1000
+
+      //决定tabControl函数什么时候吸顶
+      this.isShowTab = (-position.y) > this.tabOffsetTop
     },
     loadMore() {
       this.getHomeGoods(this.currentType)
+      this.$refs.scroll.scroll.refresh()
+    },
+    swiperImgLoad() {
+      this.tabOffsetTop = this.$refs.tabControl2.$el.offsetTop;
+      // console.log(this.$refs.tabControl.$el.offsetTop);
     },
     /**
      * 网络请求相关方法
@@ -140,10 +172,15 @@ export default {
 }
 
 .tab-control {
-  position: sticky;
-  top: 44px;
-  z-index: 2;
+  position: relative;
+  z-index: 9;
 }
+
+/*.tab-control {*/
+/*  position: sticky;*/
+/*  top: 44px;*/
+/*  z-index: 2;*/
+/*}*/
 
 .content {
   position: absolute;
