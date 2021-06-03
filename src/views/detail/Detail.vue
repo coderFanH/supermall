@@ -10,11 +10,14 @@
       <detail-comment-content :commentInfo="commentInfo" ref="comment"></detail-comment-content>
       <goods-list :goods="recommendList" ref="recommend"></goods-list>
     </scroll>
+    <detail-bottom-bar @addCart="addCart"></detail-bottom-bar>
+<!--    <toast></toast>-->
   </div>
 </template>
 
 <script>
 import Scroll from "@/components/common/scroll/Scroll";
+// import Toast from "@/components/common/toast/Toast";
 
 import DetailNavBar from "@/views/detail/childComps/DetailNavBar";
 import DetailSwiper from "@/views/detail/childComps/DetailSwiper";
@@ -23,6 +26,8 @@ import DetailShopContent from "@/views/detail/childComps/DetailShopContent";
 import DetailContent from "@/views/detail/childComps/DetailContent";
 import DetailParamContent from "@/views/detail/childComps/DetailParamContent";
 import DetailCommentContent from "@/views/detail/childComps/DetailCommentContent";
+import DetailBottomBar from "@/views/detail/childComps/DetailBottomBar";
+
 import {getDetail, getRecommend, Goods, Shop, Param} from "@/network/detail";
 import GoodsList from "@/components/content/goods/GoodsList";
 
@@ -40,7 +45,9 @@ export default {
       commentInfo: {},
       recommendList: [],
       themeTopY: [],
-      getThemeTopY: null
+      getThemeTopY: null,
+      // message: '',
+      // show: false
     }
   },
   created() {
@@ -99,7 +106,30 @@ export default {
       // this.themeTopY.push(this.$refs.param.$el.offsetTop)
       // this.themeTopY.push(this.$refs.param.$el.offsetTop)
       // console.log(this.themeTopY);
+    },
+    //将商品添加到购物车
+    addCart() {
+      //取出需要使用的数据
+      const product = {}
+      product.image = this.topImage[0];
+      product.title = this.goods.title;
+      product.desc = this.goods.desc;
+      product.price = this.goods.realPrice;
+      product.iid = this.iid;
+      // this.$store.commit('addCart', product)
+      this.$store.dispatch('addPTOCart', product).then(res => {
+        // this.show = true;
+        // this.message = res;
+        //
+        // setTimeout(() => {
+        //   this.show = false
+        //   this.message = ''
+        // },1500)
+        // console.log(res);
+        this.$toast.show(res, 1500)
+      })
     }
+
   },
   components: {
     Scroll,
@@ -110,7 +140,9 @@ export default {
     DetailContent,
     DetailParamContent,
     DetailCommentContent,
-    GoodsList
+    GoodsList,
+    DetailBottomBar,
+    // Toast
   }
 }
 </script>
